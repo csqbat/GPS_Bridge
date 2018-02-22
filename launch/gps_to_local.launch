@@ -1,0 +1,9 @@
+
+
+<launch>
+	<node pkg="gps_to_local_bridge" name="GPS_TO_Local" type="gps_to_local.py" output="screen"/>
+	<param name="/origin_lat" value="44.539297"/>
+	<param name="/origin_lon" value="-123.251447"/>
+</launch>
+
+
