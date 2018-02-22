@@ -55,9 +55,6 @@ def GPS_bearing(lat1, lon1, lat2, lon2):
   brng = math.atan2(y, x)
   return toDeg(brng)
 
-def lin_interp(lat1, lon1, lat2, lon2, latx, lonx, meter_x, meter_Y):
-  a = 7
-
 def GPS_to_XY(lat1, lon1, lat2, lon2):
   d = GPS_distance(lat1, lon1, lat2, lon2)
   b = GPS_bearing(lat1, lon1, lat2, lon2)
