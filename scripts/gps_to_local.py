@@ -14,10 +14,10 @@ from sensor_msgs.msg import NavSatFix
 
 
 def toRad(num):
-  return 3.14159265359 * float(num) / 180.0
+  return 0.017453292519943 * float(num)
 
 def toDeg(num):
-  return 180.0 * float(num) / 3.14159265359
+  return 57.295779513082 * float(num)
 
 
 def GPS_distance(lat1, lon1, lat2, lon2):
