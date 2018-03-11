@@ -4,7 +4,7 @@
 import rospy, math
 import numpy as np
 import sys, termios, tty, select, os
-
+from dji_sdk.msg import GlobalPosition
 from geometry_msgs.msg import Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import NavSatFix
@@ -82,6 +82,7 @@ class GPS_to_Local(object):
     # get true odom from the quad
     self.sub_odom = rospy.Subscriber("/dji_sdk/odometry", Odometry, self.callback_odom)
     self.sub_gps = rospy.Subscriber("/dji_sdk/global_position", GlobalPosition, self.callback_gps)
+    self.good_odom = False
     
 #    # create a test point 1,000 m south-and 1,000 m east of me
 #    dist = 1414.21356237
@@ -95,8 +96,8 @@ class GPS_to_Local(object):
 #    [x, y] = GPS_to_XY(self.origin_lat, self.origin_lon, self.ref_lat, self.ref_lon)
 #    rospy.loginfo("     x/y: %0.2f / %0.2f", x,y)
 
-  def GPS_callback(self, gps_msg):
-    if gps_msg.status.status >= 0 and self.good_odom:
+  def callback_gps(self, gps_msg):
+    if self.good_odom:
       [x, y] = GPS_to_XY(self.origin_lat, self.origin_lon, gps_msg.latitude, gps_msg.longitude)
 
       odom = self.odom #Trust values from odom
@@ -104,14 +105,19 @@ class GPS_to_Local(object):
       odom.pose.pose.position.y = y
       self.pub_odom.publish(odom)      
     
-  def odom_callback(self, odom_msg):
+  def callback_odom(self, odom_msg):
       self.good_odom = True
       self.odom = odom_msg
 
 if __name__ == '__main__':
   rospy.init_node('GPS_to_Local')
-  origin_lat = rospy.get_param('origin_lat')
-  origin_lon = rospy.get_param('origin_lon')
+  north_lat = rospy.get_param('/north_lat')
+  west_lon = rospy.get_param('/west_lon')
+  south_lat = rospy.get_param('/south_lat')
+  east_lon = rospy.get_param('/east_lon')
+
+  origin_lat = (float(north_lat) + float(south_lat))/2.0
+  origin_lon = (float(west_lon) + float(east_lon))/2.0
 
   rospy.loginfo("GPS_to_Local::initializing")
   rospy.loginfo(" GPS_to_Local::origin_lat: %0.5f", origin_lat)
