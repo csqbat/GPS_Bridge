@@ -59,7 +59,7 @@ def GPS_to_XY(lat1, lon1, lat2, lon2):
   d = GPS_distance(lat1, lon1, lat2, lon2)
   b = GPS_bearing(lat1, lon1, lat2, lon2)
 
-  y = d * math.cos(toRad(b))
+  y = d * -math.cos(toRad(b))
   x = d * math.sin(toRad(b))
   return [x, y]
 
