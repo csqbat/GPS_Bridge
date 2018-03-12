@@ -97,7 +97,7 @@ class GPS_to_Local(object):
 #    rospy.loginfo("     x/y: %0.2f / %0.2f", x,y)
 
   def callback_gps(self, gps_msg):
-    if self.good_odom:
+    if self.good_odom and gps_msg.health >= 2:
       [x, y] = GPS_to_XY(self.origin_lat, self.origin_lon, gps_msg.latitude, gps_msg.longitude)
 
       odom = self.odom #Trust values from odom
