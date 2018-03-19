@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import rospy, math
+import rospy, math, tf
 import numpy as np
 import sys, termios, tty, select, os
 from dji_sdk.msg import GlobalPosition
@@ -77,11 +77,12 @@ class GPS_to_Local(object):
     self.origin_lon = origin_lon
 
     # Setup publisher
-    self.pub_odom = rospy.Publisher('/local/odom', Odometry, queue_size=10)
+    self.pub_odom = rospy.Publisher('/global/odom', Odometry, queue_size=1)
     # Setup Subs
     # get true odom from the quad
-    self.sub_odom = rospy.Subscriber("/dji_sdk/odometry", Odometry, self.callback_odom)
-    self.sub_gps = rospy.Subscriber("/dji_sdk/global_position", GlobalPosition, self.callback_gps)
+    self.sub_odom = rospy.Subscriber("/dji_sdk/odometry", Odometry, self.callback_odom, queue_size=1)
+    self.sub_gps = rospy.Subscriber("/dji_sdk/global_position", GlobalPosition, self.callback_gps, queue_size=1)
+    self.pub_tf = tf.TransformBroadcaster()
     self.good_odom = False
     
 #    # create a test point 1,000 m south-and 1,000 m east of me
@@ -95,19 +96,28 @@ class GPS_to_Local(object):
 #    rospy.loginfo("     Origin: %0.5f / %0.5f", self.origin_lat, self.origin_lon)
 #    [x, y] = GPS_to_XY(self.origin_lat, self.origin_lon, self.ref_lat, self.ref_lon)
 #    rospy.loginfo("     x/y: %0.2f / %0.2f", x,y)
+  
 
   def callback_gps(self, gps_msg):
-    if self.good_odom and gps_msg.health >= 2:
+    if self.good_odom:# and gps_msg.health >= 2:
       [x, y] = GPS_to_XY(self.origin_lat, self.origin_lon, gps_msg.latitude, gps_msg.longitude)
-
+      #rospy.logerr("x %.2f and y %.2f", x ,y)
       odom = self.odom #Trust values from odom
       odom.pose.pose.position.x = x # except x and y, which I want in my own frame which is relative to a specified origin
-      odom.pose.pose.position.y = y
-      self.pub_odom.publish(odom)      
+      odom.pose.pose.position.y = -y
+      self.pub_odom.publish(odom)   
+      self.pub_tf.sendTransform((x, -y, odom.pose.pose.position.z), (odom.pose.pose.orientation.x,odom.pose.pose.orientation.y,odom.pose.pose.orientation.z,odom.pose.pose.orientation.w),rospy.Time.now(), "/global_quad", "/world")
     
   def callback_odom(self, odom_msg):
       self.good_odom = True
+      euler = tf.transformations.euler_from_quaternion((odom_msg.pose.pose.orientation.x,odom_msg.pose.pose.orientation.y,odom_msg.pose.pose.orientation.z,odom_msg.pose.pose.orientation.w))
+      roll = euler[0]
+      pitch = euler[1]
+      yaw = -euler[2] + math.pi/2.0
+      [odom_msg.pose.pose.orientation.x,odom_msg.pose.pose.orientation.y,odom_msg.pose.pose.orientation.z,odom_msg.pose.pose.orientation.w] = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+      #rospy.logwarn("rpy: %0.2f, %0.2f, %0.2f", roll, pitch, yaw)
       self.odom = odom_msg
+      
 
 if __name__ == '__main__':
   rospy.init_node('GPS_to_Local')
