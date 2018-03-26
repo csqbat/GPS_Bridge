@@ -104,16 +104,16 @@ class GPS_to_Local(object):
       #rospy.logerr("x %.2f and y %.2f", x ,y)
       odom = self.odom #Trust values from odom
       odom.pose.pose.position.x = x # except x and y, which I want in my own frame which is relative to a specified origin
-      odom.pose.pose.position.y = -y
+      odom.pose.pose.position.y = y
       self.pub_odom.publish(odom)   
-      self.pub_tf.sendTransform((x, -y, odom.pose.pose.position.z), (odom.pose.pose.orientation.x,odom.pose.pose.orientation.y,odom.pose.pose.orientation.z,odom.pose.pose.orientation.w),rospy.Time.now(), "/global_quad", "/world")
+      self.pub_tf.sendTransform((x, y, odom.pose.pose.position.z), (odom.pose.pose.orientation.x,odom.pose.pose.orientation.y,odom.pose.pose.orientation.z,odom.pose.pose.orientation.w),rospy.Time.now(), "/global_quad", "/world")
     
   def callback_odom(self, odom_msg):
       self.good_odom = True
       euler = tf.transformations.euler_from_quaternion((odom_msg.pose.pose.orientation.x,odom_msg.pose.pose.orientation.y,odom_msg.pose.pose.orientation.z,odom_msg.pose.pose.orientation.w))
       roll = euler[0]
       pitch = euler[1]
-      yaw = -euler[2] + math.pi/2.0
+      yaw = euler[2] + 0.0*math.pi/2.0
       [odom_msg.pose.pose.orientation.x,odom_msg.pose.pose.orientation.y,odom_msg.pose.pose.orientation.z,odom_msg.pose.pose.orientation.w] = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
       #rospy.logwarn("rpy: %0.2f, %0.2f, %0.2f", roll, pitch, yaw)
       self.odom = odom_msg
